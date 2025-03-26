@@ -1,0 +1,17 @@
+{
+  "name": "exam-anomaly-detection",
+  "version": "1.0.0",
+  "description": "Streamlit application for detecting exam anomalies",
+  "main": "index.js",
+  "scripts": {
+    "start": "python -m streamlit run app.py",
+    "build": "echo 'This is a Python application, no build step required'"
+  },
+  "keywords": [
+    "streamlit",
+    "machine-learning",
+    "education"
+  ],
+  "author": "",
+  "license": "ISC"
+}
