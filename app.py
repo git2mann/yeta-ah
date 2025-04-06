@@ -22,148 +22,119 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        line-height: 1.7;
-        color: #111827; /* Darker text for better contrast */
-        background-color: #F3F4F6;
-    }
-
-    .main {
-        background-color: #F9FAFB;
-    }
-
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        border-radius: 4px 4px 0px 0px;
-        padding: 10px 16px;
-        background-color: #1F2937;
-        font-weight: 600;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #2563EB !important;
-        color: white !important;
-    }
-
-    h1, h2, h3 {
-        color: #1F2937;
-    }
-
-    /* Hero Section */
-    .hero-section {
-        background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
-        padding: 3rem 2rem;
-        border-radius: 8px;
-        color: white;
-        margin-bottom: 2rem;
-        text-align: center;
-    }
-
-    /* Feature Cards */
-    .feature-card {
-        background-color: white;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        margin-bottom: 16px;
-    }
-
-    /* Buttons */
-    .btn-primary {
-        background-color: #2563EB;
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-weight: 600;
-        border: none;
-    }
-    .btn-primary:hover {
-        background-color: #1E40AF !important;
-    }
-
-    .btn-secondary {
-        background-color: white;
-        color: #2563EB;
-        border: 1px solid #2563EB;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-weight: 600;
-    }
-    .btn-secondary:hover {
-        background-color: #EFF6FF;
-        border-color: #2563EB;
-    }
-
-    /* Code Block */
-    .code-block {
-        background-color: #E5E7EB; /* Slightly darker for better contrast */
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        overflow-x: auto;
-        font-family: 'Fira Code', 'Courier New', monospace;
-    }
-
-    /* Screenshot Borders */
-    .screenshot {
-        border: 1px solid #D1D5DB;
-        border-radius: 0.5rem;
-        overflow: hidden;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
-    }
-
-    /* Highlighted Information */
-    .bg-blue-50 {
-        background-color: #DBEAFE;
-        border-left: 4px solid #1E3A8A !important;
-    }
-    .bg-yellow-50 {
-        background-color: #FEF3C7;
-        border-left: 4px solid #B45309 !important;
-    }
-
-    .bg-blue-50 strong, .bg-yellow-50 strong {
-        color: #111827;
-    }
-
-    /* Links */
-    a {
-        color: #1E40AF;
-        font-weight: 600;
-    }
-    a:hover {
-        color: #1D4ED8;
-        text-decoration: underline;
-    }
-
-    /* Footer */
-    footer a {
-        color: #E5E7EB;
-        font-weight: 500;
-    }
-    footer a:hover {
-        color: #93C5FD !important;
-    }
-
-    /* Warning and Info Boxes */
-    .warning-box {
-        background-color: #FEF2F2;
-        border-left: 4px solid #EF4444;
-        padding: 1rem;
-        border-radius: 0.375rem;
-        margin: 1rem 0;
-    }
-    .info-box {
-        background-color: #EFF6FF;
-        border-left: 4px solid #3B82F6;
-        padding: 1rem;
-        border-radius: 0.375rem;
-        margin: 1rem 0;
-    }
-</style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.7;
+            color: #E5E7EB; /* Light text for better contrast */
+            background-color: #1F2937; /* Dark background */
+        }
+    
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #111827 0%, #1F2937 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 2rem;
+        }
+    
+        /* Feature Cards */
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: #374151; /* Darker card background */
+            color: #E5E7EB; /* Light text */
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.07);
+        }
+    
+        /* Code Block */
+        .code-block {
+            background-color: #1E293B; /* Darker code block background */
+            color: #E5E7EB; /* Light text */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+    
+        /* Screenshot Borders */
+        .screenshot {
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+        }
+    
+        /* Buttons */
+        .btn-primary {
+            background-color: #2563EB;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            display: inline-block;
+            transition: background-color 0.3s ease, transform 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary:hover {
+            background-color: #1E40AF;
+            transform: scale(1.03);
+        }
+    
+        .btn-secondary {
+            background-color: #374151;
+            color: #2563EB;
+            border: 2px solid #2563EB;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-secondary:hover {
+            background-color: #1E293B;
+            border-color: #1E40AF;
+        }
+    
+        /* Highlighted Information */
+        .bg-blue-50 {
+            background-color: #1E293B;
+            border-left: 4px solid #2563EB;
+        }
+        .bg-yellow-50 {
+            background-color: #374151;
+            border-left: 4px solid #B45309;
+        }
+    
+        .bg-blue-50 strong, .bg-yellow-50 strong {
+            color: #E5E7EB;
+        }
+    
+        /* Links */
+        a {
+            color: #3B82F6;
+            font-weight: 600;
+        }
+        a:hover {
+            color: #60A5FA;
+            text-decoration: underline;
+        }
+    
+        /* Footer */
+        footer {
+            background-color: #111827;
+            color: #9CA3AF;
+        }
+        footer a {
+            color: #60A5FA;
+            font-weight: 500;
+        }
+        footer a:hover {
+            color: #93C5FD;
+        }
+    </style>
 """, unsafe_allow_html=True)
 
 # Load the model and related files
