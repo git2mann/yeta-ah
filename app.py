@@ -134,7 +134,16 @@ st.markdown("""
         footer a:hover {
             color: #93C5FD;
         }
-    </style>
+    
+        /* Shiny Effect */
+        .shiny-effect {
+            animation: shiny 1.5s infinite alternate;
+        }
+        @keyframes shiny {
+            0% { background-color: rgba(37, 99, 235, 0.2); }
+            100% { background-color: rgba(37, 99, 235, 0.5); }
+        }
+</style>
 """, unsafe_allow_html=True)
 
 # Initialize session state variables
@@ -144,6 +153,10 @@ if "prob" not in st.session_state:
     st.session_state.prob = None
 if "feature_contributions" not in st.session_state:
     st.session_state.feature_contributions = None
+if "interacted_sections" not in st.session_state:
+    st.session_state.interacted_sections = set()
+if "first_section_opened" not in st.session_state:
+    st.session_state.first_section_opened = False
 metrics = None
 
 # Load the model and related files
@@ -377,6 +390,10 @@ def retrain_model(dataset_file, model_file):
     joblib.dump(model, model_file)
     st.success("Model retrained and updated.")
 
+# Function to mark a section as interacted
+def mark_section_interacted(section_name):
+    st.session_state.interacted_sections.add(section_name)
+
 # Main function
 def main():
     # Load model resources
@@ -470,119 +487,162 @@ def main():
             # Display results
             st.subheader("Analysis Results")
 
-            # Gauge chart for probability
-            st.subheader("Probability of Academic Misconduct")
-            fig = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=st.session_state.prob,
-                domain={'x': [0, 1], 'y': [0, 1]},
-                title={'text': "Probability"},
-                gauge={
-                    'axis': {'range': [None, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                    'bar': {'color': "#2563EB" if st.session_state.prob <= threshold else "#EF4444"},
-                    'bgcolor': "white",
-                    'borderwidth': 2,
-                    'bordercolor': "gray",
-                    'steps': [
-                        {'range': [0, threshold], 'color': '#DBEAFE'},
-                        {'range': [threshold, 1], 'color': '#FEE2E2'}
-                    ],
-                    'threshold': {
-                        'line': {'color': "black", 'width': 4},
-                        'thickness': 0.75,
-                        'value': threshold
+            # Grouped charts and diagrams
+            with st.expander(
+                "📊 Probability of Academic Misconduct (Gauge Chart)",
+                expanded=not st.session_state.first_section_opened
+            ):
+                if not st.session_state.first_section_opened:
+                    st.session_state.first_section_opened = True
+                st.markdown("""
+                The gauge chart shows the probability of academic misconduct for the selected student. 
+                - **Low Probability (< Threshold)**: Indicates normal behavior.
+                - **High Probability (> Threshold)**: Indicates potential academic misconduct.
+                - **Extreme Cases**: Values close to 1 may indicate highly unusual behavior.
+                """)
+                fig = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=st.session_state.prob,
+                    domain={'x': [0, 1], 'y': [0, 1]},
+                    title={'text': "Probability"},
+                    gauge={
+                        'axis': {'range': [None, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                        'bar': {'color': "#2563EB" if st.session_state.prob <= threshold else "#EF4444"},
+                        'bgcolor': "white",
+                        'borderwidth': 2,
+                        'bordercolor': "gray",
+                        'steps': [
+                            {'range': [0, threshold], 'color': '#DBEAFE'},
+                            {'range': [threshold, 1], 'color': '#FEE2E2'}
+                        ],
+                        'threshold': {
+                            'line': {'color': "black", 'width': 4},
+                            'thickness': 0.75,
+                            'value': threshold
+                        }
                     }
-                }
-            ))
-            fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
-            st.plotly_chart(fig, use_container_width=True)
+                ))
+                fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+                mark_section_interacted("gauge_chart")
 
-            # Contributions chart for feature importance
-            st.subheader("Feature Contributions")
-            contributions_df = pd.DataFrame({
-                'Feature': list(st.session_state.feature_contributions.keys()),
-                'Contribution': list(st.session_state.feature_contributions.values()),
-                'Absolute': np.abs(list(st.session_state.feature_contributions.values()))
-            })
-            contributions_df = contributions_df.sort_values('Absolute', ascending=False).head(5)
+            with st.expander(
+                f"📈 Feature Contributions (Bar Chart)",
+                expanded="feature_contributions" not in st.session_state.interacted_sections
+            ):
+                if "feature_contributions" not in st.session_state.interacted_sections:
+                    st.markdown('<div class="shiny-effect">New!</div>', unsafe_allow_html=True)
+                st.markdown("""
+                This chart highlights the top features contributing to the model's prediction:
+                - **Positive Contributions**: Features that increase the probability of misconduct.
+                - **Negative Contributions**: Features that decrease the probability.
+                - **Extreme Cases**: Large absolute contributions may indicate significant anomalies.
+                """)
+                contributions_df = pd.DataFrame({
+                    'Feature': list(st.session_state.feature_contributions.keys()),
+                    'Contribution': list(st.session_state.feature_contributions.values()),
+                    'Absolute': np.abs(list(st.session_state.feature_contributions.values()))
+                })
+                contributions_df = contributions_df.sort_values('Absolute', ascending=False).head(5)
 
-            # Create a horizontal bar chart with Plotly
-            fig = px.bar(
-                contributions_df,
-                y='Feature',
-                x='Contribution',
-                orientation='h',
-                color='Contribution',
-                color_continuous_scale=['green', 'yellow', 'red'],
-                title='Top 5 Features Contributing to Prediction'
-            )
-            fig.update_layout(
-                height=350,
-                xaxis_title="Contribution to Anomaly Score",
-                yaxis_title=None,
-                margin=dict(l=20, r=20, t=40, b=20),
-                coloraxis_showscale=False
-            )
-            st.plotly_chart(fig, use_container_width=True)
+                fig = px.bar(
+                    contributions_df,
+                    y='Feature',
+                    x='Contribution',
+                    orientation='h',
+                    color='Contribution',
+                    color_continuous_scale=['green', 'yellow', 'red'],
+                    title='Top 5 Features Contributing to Prediction'
+                )
+                fig.update_layout(
+                    height=350,
+                    xaxis_title="Contribution to Anomaly Score",
+                    yaxis_title=None,
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    coloraxis_showscale=False
+                )
+                st.plotly_chart(fig, use_container_width=True)
+                mark_section_interacted("feature_contributions")
 
-        # Graphical outputs for analysis
-        if metrics is not None:
-            st.subheader("Graphical Analysis")
+            with st.expander("📊 Feature Comparison (Radar Chart)"):
+                st.markdown("""
+                The radar chart compares the student's feature values to the average values of all students:
+                - **Close to Center**: Indicates values close to the average.
+                - **Far from Center**: Indicates significant deviations from the norm.
+                - **Extreme Cases**: Large deviations may indicate anomalies.
+                """)
+                average_values = X_demo[feature_names].mean().values if use_demo else np.zeros(len(feature_names))
+                fig = create_radar_chart(student_data - average_values, feature_names)
+                st.plotly_chart(fig, use_container_width=True)
 
-            # Radar chart
-            st.subheader("Feature Comparison (Radar Chart)")
-            average_values = X_demo[feature_names].mean().values if use_demo else np.zeros(len(feature_names))
-            fig = create_radar_chart(student_data - average_values, feature_names)
-            st.plotly_chart(fig, use_container_width=True)
+            with st.expander("📊 Feature Distributions (Box Plots)", expanded="box_plots" not in st.session_state.interacted_sections):
+                if "box_plots" not in st.session_state.interacted_sections:
+                    st.markdown('<div class="shiny-effect"></div>', unsafe_allow_html=True)
+                st.markdown("""
+                The box plots show the distribution of each feature across all students, with the selected student's value highlighted:
+                - **Inside the Box**: Indicates typical values.
+                - **Outside the Whiskers**: Indicates potential outliers.
+                - **Extreme Cases**: Values far outside the whiskers may indicate anomalies.
+                """)
 
-            # Box plots
-            st.subheader("Feature Distributions (Box Plot)")
-            if use_demo:
-                for feature in feature_names:
-                    fig = px.box(
-                        X_demo,
-                        y=feature,
-                        points="all",
-                        title=f"Distribution of {feature}",
-                        labels={feature: feature},
-                        color_discrete_sequence=["#2563EB"]
-                    )
-                    fig.add_scatter(
-                        y=[metrics[feature]],
-                        mode="markers",
-                        marker=dict(color="red", size=10),
-                        name="Student Value"
+                if use_demo:
+                    # Create tabs for each feature
+                    tabs = st.tabs(feature_names)
+                    for i, feature in enumerate(feature_names):
+                        with tabs[i]:
+                            fig = px.box(
+                                X_demo,
+                                y=feature,
+                                points="all",
+                                title=f"Distribution of {feature}",
+                                labels={feature: feature},
+                                color_discrete_sequence=["#2563EB"]
+                            )
+                            fig.add_scatter(
+                                y=[metrics[feature]],
+                                mode="markers",
+                                marker=dict(color="red", size=10),
+                                name="Student Value"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                mark_section_interacted("box_plots")
+
+            with st.expander("📊 Feature Correlation Heatmap"):
+                st.markdown("""
+                The heatmap shows the correlation between features in the dataset:
+                - **High Positive Correlation**: Features that increase together.
+                - **High Negative Correlation**: Features that move in opposite directions.
+                - **Extreme Cases**: Strong correlations may indicate redundant or dependent features.
+                """)
+                if use_demo:
+                    correlation_matrix = X_demo[feature_names].corr()
+                    fig = px.imshow(
+                        correlation_matrix,
+                        text_auto=True,
+                        color_continuous_scale="Blues",
+                        title="Feature Correlation Matrix"
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
-            # Correlation heatmap
-            st.subheader("Feature Correlation Heatmap")
-            if use_demo:
-                correlation_matrix = X_demo[feature_names].corr()
-                fig = px.imshow(
-                    correlation_matrix,
-                    text_auto=True,
-                    color_continuous_scale="Blues",
-                    title="Feature Correlation Matrix"
+            with st.expander("📊 Feature Contributions vs. Probability (Scatter Plot)"):
+                st.markdown("""
+                This scatter plot shows the relationship between feature contributions and the probability of misconduct:
+                - **Positive Contributions**: Features that increase the probability.
+                - **Negative Contributions**: Features that decrease the probability.
+                - **Extreme Cases**: Large contributions may indicate significant anomalies.
+                """)
+                contributions_df['Probability'] = st.session_state.prob
+                fig = px.scatter(
+                    contributions_df,
+                    x='Contribution',
+                    y='Probability',
+                    color='Feature',
+                    size='Absolute',
+                    title="Feature Contributions vs. Probability",
+                    labels={'Contribution': 'Feature Contribution', 'Probability': 'Probability of Misconduct'},
+                    color_discrete_sequence=px.colors.qualitative.Set1
                 )
                 st.plotly_chart(fig, use_container_width=True)
-
-            # Scatter plot for feature contributions vs. probability
-            st.subheader("Feature Contributions vs. Probability")
-            contributions_df['Probability'] = st.session_state.prob
-            fig = px.scatter(
-                contributions_df,
-                x='Contribution',
-                y='Probability',
-                color='Feature',
-                size='Absolute',
-                title="Feature Contributions vs. Probability",
-                labels={'Contribution': 'Feature Contribution', 'Probability': 'Probability of Misconduct'},
-                color_discrete_sequence=px.colors.qualitative.Set1
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Please analyze the student data to view graphical outputs.")
 
         # Feedback section
         st.subheader("Provide Feedback")
