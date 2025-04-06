@@ -137,6 +137,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Initialize session state variables
+if "prediction" not in st.session_state:
+    st.session_state.prediction = None
+if "prob" not in st.session_state:
+    st.session_state.prob = None
+if "feature_contributions" not in st.session_state:
+    st.session_state.feature_contributions = None
+metrics = None
+
 # Load the model and related files
 @st.cache_resource
 def load_model_resources():
@@ -308,7 +317,7 @@ def save_feedback(student_id, prediction, feedback):
     }
     if os.path.exists(feedback_file):
         feedback_df = pd.read_csv(feedback_file)
-        feedback_df = feedback_df.append(feedback_data, ignore_index=True)
+        feedback_df = pd.concat([feedback_df, pd.DataFrame([feedback_data])], ignore_index=True)
     else:
         feedback_df = pd.DataFrame([feedback_data])
     feedback_df.to_csv(feedback_file, index=False)
@@ -352,6 +361,21 @@ def calculate_metrics(coursework_scores, exam_scores, historical_scores, exam_ti
         'historical_trend': historical_trend,
         'anomaly_score': 0.0  # Placeholder, as anomaly_score is calculated by the model
     }
+
+def retrain_model(dataset_file, model_file):
+    """Retrain the model using the updated dataset."""
+    dataset_df = pd.read_csv(dataset_file)
+    X = dataset_df[feature_names].values
+    y = dataset_df["label"].values
+
+    # Retrain the model
+    from sklearn.ensemble import RandomForestClassifier
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X, y)
+
+    # Save the updated model
+    joblib.dump(model, model_file)
+    st.success("Model retrained and updated.")
 
 # Main function
 def main():
@@ -426,101 +450,161 @@ def main():
             metrics = calculate_metrics(coursework_scores, exam_scores, historical_scores, exam_times, peer_group_scores)
             student_data = np.array([metrics[feature] for feature in feature_names])
 
+        # Initialize metrics with a default value
+        metrics = None
+
         # Analyze button
         analyze_button = st.button("Analyze Student", type="primary")
         if analyze_button:
             prediction, prob, feature_contributions = analyze_student(
                 student_data, model, feature_names, threshold
             )
+            # Store results in session state
+            st.session_state.prediction = prediction
+            st.session_state.prob = prob
+            st.session_state.feature_contributions = feature_contributions
 
-            # Display results in cards
-            col1, col2 = st.columns(2, gap="large")
+            # Calculate metrics
+            metrics = {feature: student_data[i] for i, feature in enumerate(feature_names)}
 
-            with col1:
-                st.subheader("Prediction Result")
-                # Create a gauge chart with Plotly
-                fig = go.Figure(go.Indicator(
-                    mode="gauge+number",
-                    value=prob,
-                    domain={'x': [0, 1], 'y': [0, 1]},
-                    title={'text': "Probability of Academic Misconduct"},
-                    gauge={
-                        'axis': {'range': [None, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                        'bar': {'color': "#2563EB" if prob <= threshold else "#EF4444"},
-                        'bgcolor': "white",
-                        'borderwidth': 2,
-                        'bordercolor': "gray",
-                        'steps': [
-                            {'range': [0, threshold], 'color': '#DBEAFE'},
-                            {'range': [threshold, 1], 'color': '#FEE2E2'}
-                        ],
-                        'threshold': {
-                            'line': {'color': "black", 'width': 4},
-                            'thickness': 0.75,
-                            'value': threshold
-                        }
+            # Display results
+            st.subheader("Analysis Results")
+
+            # Gauge chart for probability
+            st.subheader("Probability of Academic Misconduct")
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=st.session_state.prob,
+                domain={'x': [0, 1], 'y': [0, 1]},
+                title={'text': "Probability"},
+                gauge={
+                    'axis': {'range': [None, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                    'bar': {'color': "#2563EB" if st.session_state.prob <= threshold else "#EF4444"},
+                    'bgcolor': "white",
+                    'borderwidth': 2,
+                    'bordercolor': "gray",
+                    'steps': [
+                        {'range': [0, threshold], 'color': '#DBEAFE'},
+                        {'range': [threshold, 1], 'color': '#FEE2E2'}
+                    ],
+                    'threshold': {
+                        'line': {'color': "black", 'width': 4},
+                        'thickness': 0.75,
+                        'value': threshold
                     }
-                ))
+                }
+            ))
+            fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
+            st.plotly_chart(fig, use_container_width=True)
 
-                fig.update_layout(
-                    height=250,
-                    margin=dict(l=20, r=20, t=50, b=20),
+            # Contributions chart for feature importance
+            st.subheader("Feature Contributions")
+            contributions_df = pd.DataFrame({
+                'Feature': list(st.session_state.feature_contributions.keys()),
+                'Contribution': list(st.session_state.feature_contributions.values()),
+                'Absolute': np.abs(list(st.session_state.feature_contributions.values()))
+            })
+            contributions_df = contributions_df.sort_values('Absolute', ascending=False).head(5)
+
+            # Create a horizontal bar chart with Plotly
+            fig = px.bar(
+                contributions_df,
+                y='Feature',
+                x='Contribution',
+                orientation='h',
+                color='Contribution',
+                color_continuous_scale=['green', 'yellow', 'red'],
+                title='Top 5 Features Contributing to Prediction'
+            )
+            fig.update_layout(
+                height=350,
+                xaxis_title="Contribution to Anomaly Score",
+                yaxis_title=None,
+                margin=dict(l=20, r=20, t=40, b=20),
+                coloraxis_showscale=False
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Graphical outputs for analysis
+        if metrics is not None:
+            st.subheader("Graphical Analysis")
+
+            # Radar chart
+            st.subheader("Feature Comparison (Radar Chart)")
+            average_values = X_demo[feature_names].mean().values if use_demo else np.zeros(len(feature_names))
+            fig = create_radar_chart(student_data - average_values, feature_names)
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Box plots
+            st.subheader("Feature Distributions (Box Plot)")
+            if use_demo:
+                for feature in feature_names:
+                    fig = px.box(
+                        X_demo,
+                        y=feature,
+                        points="all",
+                        title=f"Distribution of {feature}",
+                        labels={feature: feature},
+                        color_discrete_sequence=["#2563EB"]
+                    )
+                    fig.add_scatter(
+                        y=[metrics[feature]],
+                        mode="markers",
+                        marker=dict(color="red", size=10),
+                        name="Student Value"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+            # Correlation heatmap
+            st.subheader("Feature Correlation Heatmap")
+            if use_demo:
+                correlation_matrix = X_demo[feature_names].corr()
+                fig = px.imshow(
+                    correlation_matrix,
+                    text_auto=True,
+                    color_continuous_scale="Blues",
+                    title="Feature Correlation Matrix"
                 )
-
                 st.plotly_chart(fig, use_container_width=True)
 
-                # Display the prediction with appropriate styling
-                if prediction == 1:
-                    st.markdown('### ⚠️ Potential Academic Misconduct Detected')
-                    st.markdown('This student\'s performance pattern shows anomalies that warrant further investigation.')
+            # Scatter plot for feature contributions vs. probability
+            st.subheader("Feature Contributions vs. Probability")
+            contributions_df['Probability'] = st.session_state.prob
+            fig = px.scatter(
+                contributions_df,
+                x='Contribution',
+                y='Probability',
+                color='Feature',
+                size='Absolute',
+                title="Feature Contributions vs. Probability",
+                labels={'Contribution': 'Feature Contribution', 'Probability': 'Probability of Misconduct'},
+                color_discrete_sequence=px.colors.qualitative.Set1
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Please analyze the student data to view graphical outputs.")
+
+        # Feedback section
+        st.subheader("Provide Feedback")
+        if use_demo:
+            student_id = student_id if 'student_id' in locals() else "Unknown"
+        else:
+            student_id = "Manual Entry"        
+        
+        with st.form("individual_feedback_form"):
+            feedback = st.radio(
+                "Was the model's prediction correct?",
+                options=["Yes", "No"],
+                help="Provide feedback to help improve the model."
+            )
+            feedback_notes = st.text_area("Additional Comments (optional)")
+            submitted = st.form_submit_button("Submit Feedback")
+            if submitted:
+                if st.session_state.prediction is None:
+                    st.error("Please analyze the student data before submitting feedback.")
                 else:
-                    st.markdown('### ✅ No Anomaly Detected')
-                    st.markdown('This student\'s performance pattern appears consistent with expected behavior.')
-
-            with col2:
-                st.subheader("Why the Model Believes This")
-                st.markdown("The following features contributed most to the model's decision:")
-
-                # Feature contributions
-                contributions_df = pd.DataFrame({
-                    'Feature': list(feature_contributions.keys()),
-                    'Contribution': list(feature_contributions.values()),
-                    'Absolute': np.abs(list(feature_contributions.values()))
-                })
-                contributions_df = contributions_df.sort_values('Absolute', ascending=False).head(5)
-
-                # Create a horizontal bar chart with Plotly
-                fig = px.bar(
-                    contributions_df,
-                    y='Feature',
-                    x='Contribution',
-                    orientation='h',
-                    color='Contribution',
-                    color_continuous_scale=['green', 'yellow', 'red'],
-                    title='Top 5 Features Contributing to Prediction'
-                )
-
-                fig.update_layout(
-                    height=350,
-                    xaxis_title="Contribution to Anomaly Score",
-                    yaxis_title=None,
-                    margin=dict(l=20, r=20, t=40, b=20),
-                    coloraxis_showscale=False
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-                # Explanation of top features
-                st.subheader("Feature Explanations")
-                for feature in contributions_df['Feature']:
-                    feature_info = get_feature_explanation(feature)
-                    st.markdown(f"""
-                    <div style="padding: 10px; margin-bottom: 10px; border-radius: 5px; background-color: #1F2937;">
-                        <h4>{feature_info['icon']} {feature_info['title']}</h4>
-                        <p>{feature_info['desc']}</p>
-                        <p><strong>Value:</strong> {metrics[feature]:.2f}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    save_feedback(student_id, st.session_state.prediction, feedback)
+                    st.success("Thank you for your feedback! It has been recorded.")
         
         
     
@@ -811,6 +895,13 @@ def main():
             st.plotly_chart(fig, use_container_width=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
+
+        # Model retraining section
+        st.subheader("Model Retraining")
+        if st.button("Retrain Model"):
+            process_feedback("feedback.csv", "dataset.csv")
+            retrain_model("dataset.csv", "cheating_detection_model.pkl")
+            st.success("Model retrained successfully!")
     
     with tab3:
         st.header("Model Information")
@@ -1037,7 +1128,7 @@ def main():
         """)
         
         # Simple feedback form
-        with st.form("feedback_form"):
+        with st.form("ethical_feedback_form"):
             feedback_type = st.selectbox(
                 "Feedback Type",
                 ["General Feedback", "Bug Report", "Bias Concern", "Feature Request"]
