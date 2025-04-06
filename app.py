@@ -313,6 +313,46 @@ def save_feedback(student_id, prediction, feedback):
         feedback_df = pd.DataFrame([feedback_data])
     feedback_df.to_csv(feedback_file, index=False)
 
+def calculate_metrics(coursework_scores, exam_scores, historical_scores, exam_times, peer_group_scores):
+    """
+    Calculate the metrics required by the model from raw input data.
+    """
+    # Calculate z-scores for coursework and exam scores
+    coursework_mean, coursework_std = np.mean(coursework_scores), np.std(coursework_scores)
+    exam_mean, exam_std = np.mean(exam_scores), np.std(exam_scores)
+    
+    coursework_z = (coursework_scores[-1] - coursework_mean) / coursework_std
+    exam_z = (exam_scores[-1] - exam_mean) / exam_std
+    z_diff = coursework_z - exam_z
+
+    # Calculate score variance
+    score_variance = np.std(coursework_scores + exam_scores)
+
+    # Calculate historical trend
+    historical_trend = (coursework_scores[-1] + exam_scores[-1]) / 2 - np.mean(historical_scores)
+
+    # Calculate standardized exam time
+    exam_time_std = (exam_times[-1] - np.mean(exam_times)) / np.std(exam_times)
+
+    # Calculate peer comparison
+    peer_comparison = exam_scores[-1] - np.mean(peer_group_scores)
+
+    # Calculate subject variation (example: variance across coursework and exam scores)
+    subject_variation = np.var(coursework_scores + exam_scores)
+
+    # Return calculated metrics
+    return {
+        'coursework_z': coursework_z,
+        'exam_z': exam_z,
+        'z_diff': z_diff,
+        'score_variance': score_variance,
+        'exam_time_std': exam_time_std,
+        'peer_comparison': peer_comparison,
+        'subject_variation': subject_variation,  # Add this feature
+        'historical_trend': historical_trend,
+        'anomaly_score': 0.0  # Placeholder, as anomaly_score is calculated by the model
+    }
+
 # Main function
 def main():
     # Load model resources
@@ -340,13 +380,6 @@ def main():
             "using machine learning. Upload student data or use the "
             "demo data to see how it works."
         )
-        
-#        st.markdown("### Quick Links")
-#        st.markdown("- [Individual Analysis](#individual-analysis)")
-#        st.markdown("- [Batch Analysis](#batch-analysis)")
-#        st.markdown("- [Model Information](#model-information)")
-#        st.markdown("- [Ethical Guidelines](#ethical-guidelines)")
-        
         st.markdown("---")
         st.markdown("### System Status")
         st.success("✅ Model loaded successfully")
@@ -373,44 +406,25 @@ def main():
             student_idx = X_demo[X_demo['student_id'] == student_id].index[0]
             student_data = X_demo.drop('student_id', axis=1).iloc[student_idx].values
             actual_label = y_demo.iloc[student_idx]
-            
-            #st.info(f"Actual label (for demo purposes): {'Potential Academic Misconduct' if actual_label == 1 else 'No Anomaly Detected'}")
         else:
-            # Create cards for input
-            # st.markdown('<div class="feature-card">', unsafe_allow_html=True)
-            st.subheader("Enter student data:")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                coursework_z = st.slider("Coursework Z-Score", -3.0, 3.0, 0.0, 0.1,
-                                        help="The standardized score of coursework, where 0 is average, positive values are above average, and negative values are below average.")
-                exam_z = st.slider("Exam Z-Score", -3.0, 3.0, 0.0, 0.1,
-                                  help="The standardized score of the exam, where 0 is average, positive values are above average, and negative values are below average.")
-                z_diff = st.slider("Z-Score Difference", -5.0, 5.0, 0.0, 0.1,
-                                  help="The difference between exam and coursework z-scores. Large positive values suggest better exam performance than coursework.")
-                score_variance = st.slider("Score Variance", 0.0, 2.0, 1.0, 0.1,
-                                          help="The variance in student's scores across different assessments. Low variance can indicate suspicious consistency.")
-                exam_time_std = st.slider("Exam Time (standardized)", -3.0, 3.0, 0.0, 0.1,
-                                         help="Standardized time taken to complete the exam. Negative values indicate faster completion, positive values indicate slower completion.")
-            
-            with col2:
-                peer_comparison = st.slider("Peer Comparison", -3.0, 3.0, 0.0, 0.1,
-                                           help="Performance relative to peer group. Higher values indicate performance above peers.")
-                subject_variation = st.slider("Subject Variation", 0.0, 2.0, 1.0, 0.1,
-                                             help="Variation in performance across different subjects. Low variation can indicate suspicious consistency.")
-                historical_trend = st.slider("Historical Trend", -3.0, 3.0, 0.0, 0.1,
-                                            help="Change in performance compared to past. High positive values indicate sudden improvement.")
-                anomaly_score = st.slider("Anomaly Score", 0.0, 1.0, 0.0, 0.1,
-                                         help="Statistical measure of how unusual the pattern is. Higher values indicate more anomalous patterns.")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-                
-            # Combine all features
-            student_data = np.array([
-                coursework_z, exam_z, z_diff, score_variance, exam_time_std,
-                peer_comparison, subject_variation, historical_trend, anomaly_score
-            ])
+            # Input raw data
+            st.subheader("Enter Raw Student Data:")
+            coursework_scores = st.text_input("Coursework Scores (comma-separated)", "85, 90, 88, 92")
+            exam_scores = st.text_input("Exam Scores (comma-separated)", "80, 85, 83, 87")
+            historical_scores = st.text_input("Historical Scores (comma-separated)", "75, 78, 80, 82")
+            exam_times = st.text_input("Exam Times (comma-separated)", "50, 55, 53, 52")
+            peer_group_scores = st.text_input("Peer Group Exam Scores (comma-separated)", "82, 84, 83, 85")
+        
+            # Convert input strings to lists of floats
+            coursework_scores = list(map(float, coursework_scores.split(',')))
+            exam_scores = list(map(float, exam_scores.split(',')))
+            historical_scores = list(map(float, historical_scores.split(',')))
+            exam_times = list(map(float, exam_times.split(',')))
+            peer_group_scores = list(map(float, peer_group_scores.split(',')))
+        
+            # Calculate metrics
+            metrics = calculate_metrics(coursework_scores, exam_scores, historical_scores, exam_times, peer_group_scores)
+            student_data = np.array([metrics[feature] for feature in feature_names])
         
         # Analyze button
         btn_col1, btn_col2 = st.columns([1, 5])
