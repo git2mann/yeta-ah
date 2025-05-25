@@ -507,12 +507,154 @@ def render_mathematical_framework():
 
 def render_ethical_guidelines():
     """Main function to render the Ethical Guidelines page."""
-    st.header("Ethical Guidelines")
-    st.markdown("Important considerations for responsible use of the system.")
+    st.markdown('<div class="notion-accent-bar"></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h2 style="display:inline; margin-left: 0.5rem;">⚖️ Ethical Guidelines</h2>
+        <div class="notion-callout" style="margin-top:1rem;">
+            <span style="font-size:1.5rem;">🔒</span>
+            <div>
+                Important considerations for responsible and fair use of the system.<br>
+                <span style="color:#60a5fa;">Tip:</span> Review these guidelines before using the tool in practice.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # Render sections
-    render_ethical_use_guidelines()
-    render_recommended_workflow()
-    render_explore_topics()
+    # Ethical Use Guidelines Section
+    st.markdown('<div class="feature-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
+    st.subheader("Ethical Use Guidelines")
+    st.markdown("""
+    <div class="warning-box" style="background-color: #1F2937">
+        <h3>⚠️ Important Notice</h3>
+        <p>This system is designed to be a <strong>decision support tool</strong> and not an automated decision-making system. All flagged cases must be reviewed by qualified academic staff before any action is taken.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("### Key Principles")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        #### Fairness & Bias Mitigation
+        - Regular audits for algorithmic bias
+        - Balanced representation in training data
+        - Continuous monitoring for disparate impact
+
+        #### Human Oversight
+        - All flags require human review
+        - Staff training on tool limitations
+        - Appeal process for students
+        """)
+    with col2:
+        st.markdown("""
+        #### Transparency
+        - Clear documentation of model workings
+        - Explainable predictions with feature contributions
+        - Open communication with stakeholders
+
+        #### Privacy & Security
+        - Data minimization principles
+        - Secure storage protocols
+        - Compliance with data protection regulations
+        """)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Recommended Workflow Section
+    st.markdown('<div class="feature-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
+    st.subheader("Recommended Workflow")
+    st.markdown("""
+    1. **Initial Screening**: Use the system to identify potential anomalies  
+    2. **Human Review**: Have qualified academic staff review each flagged case  
+    3. **Additional Evidence**: Gather additional information beyond model output  
+    4. **Student Consultation**: Discuss concerns with students before decisions  
+    5. **Decision & Documentation**: Document reasoning for any actions taken  
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Explore Topics Section
+    st.markdown('<div class="feature-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
+    st.subheader("Explore Topics")
+    st.markdown("Learn more about ethical guidelines and best practices below.")
+
+    topics = {
+        "Academic Integrity Policies": {
+            "description": "Learn about policies that ensure fairness and honesty in academics.",
+            "function": render_academic_integrity_policies
+        },
+        "Best Practices for Academic Misconduct Investigation": {
+            "description": "Explore recommended practices for investigating academic misconduct.",
+            "function": render_best_practices
+        },
+        "Student Rights & Responsibilities": {
+            "description": "Understand the rights and responsibilities of students.",
+            "function": render_student_rights
+        },
+        "Data Protection Guidelines": {
+            "description": "Learn how to protect sensitive student data.",
+            "function": render_data_protection
+        },
+        "Algorithmic Fairness Resources": {
+            "description": "Discover resources to ensure fairness in machine learning algorithms.",
+            "function": render_algorithmic_fairness
+        }
+    }
+    topic_keys = list(topics.keys())
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"### {topic_keys[0]}")
+        st.markdown(topics[topic_keys[0]]["description"])
+        topics[topic_keys[0]]["function"]()
+        st.markdown(f"### {topic_keys[1]}")
+        st.markdown(topics[topic_keys[1]]["description"])
+        topics[topic_keys[1]]["function"]()
+    with col2:
+        st.markdown(f"### {topic_keys[2]}")
+        st.markdown(topics[topic_keys[2]]["description"])
+        topics[topic_keys[2]]["function"]()
+        st.markdown(f"### {topic_keys[3]}")
+        st.markdown(topics[topic_keys[3]]["description"])
+        topics[topic_keys[3]]["function"]()
+    with col3:
+        st.markdown(f"### {topic_keys[4]}")
+        st.markdown(topics[topic_keys[4]]["description"])
+        topics[topic_keys[4]]["function"]()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Mathematical Framework Section
+    st.markdown('<div class="feature-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
+    st.subheader("Mathematical Framework for Academic Misconduct Detection")
+    st.markdown("""
+    <span style="color:#60a5fa;">Explore the mathematical principles and techniques used in the detection system.</span>
+    """, unsafe_allow_html=True)
     render_mathematical_framework()
-    render_feedback_form()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Feedback Form Section
+    st.markdown('<div class="feature-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
+    st.subheader("Feedback & Reporting")
+    st.markdown("""
+    We value your input to improve the system. Please report any concerns or suggestions, including:
+    - Unexpected predictions or outcomes
+    - Potential bias or fairness issues
+    - Technical errors or bugs
+    - Ideas for new features or improvements
+
+    Your feedback ensures the system remains fair, effective, and aligned with user needs.
+    """)
+    with st.form("feedback_form"):
+        st.markdown("#### Submit Your Feedback")
+        feedback_type = st.selectbox(
+            "Feedback Type",
+            ["General Feedback", "Bug Report", "Bias Concern", "Feature Request"]
+        )
+        feedback_text = st.text_area("Your Feedback", height=150, placeholder="Describe your feedback here...")
+        contact_info = st.text_input("Your Email (optional)", placeholder="Enter your email if you'd like a response")
+        submitted = st.form_submit_button("Submit Feedback", type="primary")
+        if submitted:
+            if feedback_text.strip():
+                st.success("Thank you for your feedback! It has been recorded and will be reviewed.")
+                if contact_info.strip():
+                    st.info(f"We may contact you at {contact_info} if further details are needed.")
+            else:
+                st.error("Please provide feedback before submitting.")
+    st.markdown('</div>', unsafe_allow_html=True)

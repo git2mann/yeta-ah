@@ -9,12 +9,23 @@ from utils.data_generation import generate_demo_data
 from utils.metrics import calculate_metrics
 
 def render_individual_analysis(model, scaler, threshold, feature_names):
-    st.header("Individual Student Analysis")
-    st.markdown("Analyze individual students with detailed visualizations and feature contributions.")
-    
-    # Option to use demo data or input values manually
+    st.markdown('<div class="notion-accent-bar"></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h2 style="display:inline; margin-left: 0.5rem;">📊 Individual Student Analysis</h2>
+        <div class="notion-callout" style="margin-top:1rem;">
+            <span style="font-size:1.5rem;">💡</span>
+            <div>
+                Analyze individual students with detailed visualizations and feature contributions.<br>
+                <span style="color:#60a5fa;">Tip:</span> Use demo data or input your own to see the system in action.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     use_demo = st.checkbox("Use demo data", value=True)
-    
+
     if use_demo:
         from utils.data_generation import generate_demo_data
         # Load demo data
@@ -29,6 +40,7 @@ def render_individual_analysis(model, scaler, threshold, feature_names):
         actual_label = y_demo.iloc[student_idx]
     else:
         from utils.metrics import calculate_metrics
+        st.markdown('<div class="feature-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
         # Input raw data
         st.subheader("Enter Raw Student Data:")
         coursework_scores = st.text_input("Coursework Scores (comma-separated)", "85, 90, 88, 92")
@@ -36,7 +48,8 @@ def render_individual_analysis(model, scaler, threshold, feature_names):
         historical_scores = st.text_input("Historical Scores (comma-separated)", "75, 78, 80, 82")
         exam_times = st.text_input("Exam Times (comma-separated)", "50, 55, 53, 52")
         peer_group_scores = st.text_input("Peer Group Exam Scores (comma-separated)", "82, 84, 83, 85")
-    
+        st.markdown('</div>', unsafe_allow_html=True)
+
         # Convert input strings to lists of floats
         coursework_scores = list(map(float, coursework_scores.split(',')))
         exam_scores = list(map(float, exam_scores.split(',')))
@@ -47,22 +60,23 @@ def render_individual_analysis(model, scaler, threshold, feature_names):
         # Calculate metrics
         metrics = calculate_metrics(coursework_scores, exam_scores, historical_scores, exam_times, peer_group_scores)
         student_data = [metrics[feature] for feature in feature_names]
-    
+
     # Analyze button
     btn_col1, btn_col2 = st.columns([1, 5])
     with btn_col1:
         analyze_button = st.button("Analyze Student", type="primary", use_container_width=True)
-    
+
     if analyze_button:
         # Get prediction and contributions
         prediction, prob, feature_contributions = analyze_student(
             student_data, model, feature_names, threshold
         )
-        
+
         # Display results in cards
         col1, col2 = st.columns(2, gap="large")
-        
+
         with col1:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
             st.subheader("Prediction Result")
             
             # Create a gauge chart
@@ -93,20 +107,19 @@ def render_individual_analysis(model, scaler, threshold, feature_names):
             st.plotly_chart(fig, use_container_width=True)
             
             if prediction == 1:
-                st.markdown('### ⚠️ Potential Academic Misconduct Detected')
+                st.markdown('<span class="notion-badge" style="background:#ef4444;">⚠️ Potential Academic Misconduct Detected</span>', unsafe_allow_html=True)
                 st.markdown('This student\'s performance pattern shows anomalies that warrant further investigation.')
             else:
-                st.markdown('### ✅ No Anomaly Detected')
+                st.markdown('<span class="notion-badge" style="background:#22c55e;">✅ No Anomaly Detected</span>', unsafe_allow_html=True)
                 st.markdown('This student\'s performance pattern appears consistent with expected behavior.')
-            
-            # Feature contributions
+
             st.subheader("Top Contributing Factors")
             contributions_df = pd.DataFrame({
                 'Feature': list(feature_contributions.keys()),
                 'Contribution': list(feature_contributions.values()),
                 'Absolute': np.abs(list(feature_contributions.values()))
             }).sort_values('Absolute', ascending=False).head(5)
-            
+
             fig = px.bar(
                 contributions_df,
                 y='Feature',
@@ -116,7 +129,6 @@ def render_individual_analysis(model, scaler, threshold, feature_names):
                 color_continuous_scale=['green', 'yellow', 'red'],
                 title='Top 5 Features Contributing to Prediction'
             )
-            
             fig.update_layout(
                 height=350,
                 xaxis_title="Contribution to Anomaly Score",
@@ -124,40 +136,33 @@ def render_individual_analysis(model, scaler, threshold, feature_names):
                 margin=dict(l=20, r=20, t=40, b=20),
                 coloraxis_showscale=False
             )
-            
             st.plotly_chart(fig, use_container_width=True)
-        
+            st.markdown('</div>', unsafe_allow_html=True)
+
         with col2:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
             st.subheader("Feature Visualization")
-            
-            # Create interactive radar chart
             radar_fig = create_radar_chart(student_data, feature_names)
             st.plotly_chart(radar_fig, use_container_width=True)
-            
-            # Explanation of features
             st.subheader("Key Features Explanation")
-            
-            # Get top 3 contributing features
             top_features = contributions_df['Feature'].head(3).tolist()
-            
             for feature in top_features:
                 feature_info = get_feature_explanation(feature)
                 st.markdown(f"""
-                <div style="padding: 10px; margin-bottom: 10px; border-radius: 5px; background-color: #1F2937;">
-                    <h4>{feature_info['icon']} {feature_info['title']}</h4>
-                    <p>{feature_info['desc']}</p>
-                    <p><strong>Value:</strong> {student_data[feature_names.index(feature)]:.2f}</p>
+                <div class="notion-callout" style="background:#1F2937; border-left:4px solid #2563eb;">
+                    <h4 style="margin-bottom:0.2rem;">{feature_info['icon']} {feature_info['title']}</h4>
+                    <p style="margin-bottom:0.2rem;">{feature_info['desc']}</p>
+                    <p style="font-size:0.98rem;"><strong>Value:</strong> {student_data[feature_names.index(feature)]:.2f}</p>
                 </div>
                 """, unsafe_allow_html=True)
-            
-            # Show button to see all features
             with st.expander("See all feature explanations"):
                 for feature in feature_names:
                     feature_info = get_feature_explanation(feature)
                     st.markdown(f"""
-                    <div style="padding: 10px; margin-bottom: 10px; border-radius: 5px; background-color: #1F2937;">
-                        <h4>{feature_info['icon']} {feature_info['title']}</h4>
-                        <p>{feature_info['desc']}</p>
-                        <p><strong>Value:</strong> {student_data[feature_names.index(feature)]:.2f}</p>
+                    <div class="notion-callout" style="background:#1F2937; border-left:4px solid #2563eb;">
+                        <h4 style="margin-bottom:0.2rem;">{feature_info['icon']} {feature_info['title']}</h4>
+                        <p style="margin-bottom:0.2rem;">{feature_info['desc']}</p>
+                        <p style="font-size:0.98rem;"><strong>Value:</strong> {student_data[feature_names.index(feature)]:.2f}</p>
                     </div>
                     """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)

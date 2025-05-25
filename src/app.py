@@ -16,9 +16,8 @@ st.set_page_config(
     }
 )
 
-# Load custom CSS
-with open('src/styles/main.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+with open("src/styles/main.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Load model resources
 @st.cache_resource
@@ -45,17 +44,55 @@ def main():
     # Load model resources
     model, scaler, threshold = load_model_resources()
     
-    # Hero section
+    # Notion-style Hero section with accent bar
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #1E40AF 0%, #1F2937 100%); padding: 3rem 2rem; border-radius: 8px; color: white; margin-bottom: 2rem; text-align: center;">
-        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem;">Exam Anomaly Detection System</h1>
-        <p style="font-size: 1.25rem; font-weight: 400;">An advanced machine learning solution for identifying potential academic misconduct patterns in exam performance.</p>
+    <div style="display:flex; align-items:center; margin-bottom: 2.5rem;">
+        <span class="notion-accent-bar"></span>
+        <div>
+            <h1 style="font-size: 2.7rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.01em;">🔍 Exam Anomaly Detection System</h1>
+            <p style="font-size: 1.25rem; color: #a1a1aa; margin-bottom: 1.5rem;">An advanced machine learning solution for identifying potential academic misconduct patterns in exam performance.</p>
+            <a href="#📊 Individual Analysis" class="btn-primary" style="margin-top: 1rem;">Get Started</a>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # Notion-style callout/info box
+    st.markdown("""
+    <div class="notion-callout">
+        <span style="font-size:1.5rem;">💡</span>
+        <div>
+            <strong>Tip:</strong> Try uploading your own CSV or use the demo data to explore the system's capabilities.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Feature highlights (Notion-style cards, add badge)
+    st.markdown("""
+    <div style="display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 2.5rem;">
+        <div class="feature-card" style="flex:1; min-width:220px; text-align: center;">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">📊</div>
+            <h3 style="margin: 0.5rem 0 0.5rem 0;">Individual Analysis <span class="notion-badge">New</span></h3>
+            <p style="color:#a1a1aa;">Analyze students with detailed visualizations and feature breakdowns.</p>
+        </div>
+        <div class="feature-card" style="flex:1; min-width:220px; text-align: center;">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">👥</div>
+            <h3 style="margin: 0.5rem 0 0.5rem 0;">Batch Analysis</h3>
+            <p style="color:#a1a1aa;">Process multiple students at once and identify anomalies efficiently.</p>
+        </div>
+        <div class="feature-card" style="flex:1; min-width:220px; text-align: center;">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">📈</div>
+            <h3 style="margin: 0.5rem 0 0.5rem 0;">Interactive Visuals</h3>
+            <p style="color:#a1a1aa;">View radar charts, feature importances, and probability distributions.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Notion-style divider
+    st.markdown('<hr class="notion-divider">', unsafe_allow_html=True)
+
     # Sidebar
     with st.sidebar:
-        st.image("IMG_7908.PNG", width=150)
+        st.image("IMG_7908.PNG", width=120)
         st.title("Exam Anomaly Detection")
         st.info(
             "This application helps detect potential exam anomalies "
@@ -81,6 +118,16 @@ def main():
     
     with tab4:
         render_ethical_guidelines()
+
+    # Notion-style footer
+    st.markdown("""
+    <footer>
+        <hr>
+        <div>
+            <span>© 2025 Exam Anomaly Detection System &nbsp;|&nbsp; <a href="https://github.com/yourusername/exam-anomaly-detection" style="color:#60a5fa;">GitHub</a></span>
+        </div>
+    </footer>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
