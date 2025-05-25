@@ -16,9 +16,21 @@ This web application provides an interface for detecting potential exam anomalie
    pip install -r requirements.txt
    ```
 
+   or 
+
+   ```
+   pip3 install -r requirements.txt
+   ```
+
 2. Run the Streamlit application:
    ```
    streamlit run app.py
+   ```
+
+   or for the modular version:
+
+   ```
+   streamlit src/app.py
    ```
 
 3. Access the application in your web browser at `http://localhost:8501`

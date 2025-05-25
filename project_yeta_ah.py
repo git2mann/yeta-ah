@@ -585,6 +585,8 @@ print(summary_table)
 
 # Highlight cheaters
 # Changed the lambda to apply style for each column
+from IPython.display import display
+
 highlighted_table = summary_table.style.apply(
     lambda x: ['background-color: blue' if x['Cheater'] == 'Yes' else '' for _ in x], axis=1
 )
