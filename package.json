@@ -1,17 +1,34 @@
 {
-  "name": "exam-anomaly-detection",
+  "name": "exam-anomaly-detection-react",
   "version": "1.0.0",
-  "description": "Streamlit application for detecting exam anomalies",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "python -m streamlit run app.py",
-    "build": "echo 'This is a Python application, no build step required'"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
-  "keywords": [
-    "streamlit",
-    "machine-learning",
-    "education"
-  ],
-  "author": "",
-  "license": "ISC"
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.1",
+    "recharts": "^2.8.0",
+    "plotly.js": "^2.27.1",
+    "react-plotly.js": "^2.6.0",
+    "react-dropzone": "^14.2.3",
+    "axios": "^1.6.2",
+    "lucide-react": "^0.294.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@types/plotly.js": "^2.12.29",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8"
+  }
 }
